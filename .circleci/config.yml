@@ -74,7 +74,7 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudformation/network.yml \
               --tags project=${ENVIRONMENT_NAME}-project \
-              --stack-name "${ENVIRONMENT_NAME}-eks-network" \
+              --stack-name ${ENVIRONMENT_NAME}-eks-network \
               --region us-east-1 \
               --parameter-overrides file://cloudformation/network-parameters.json
       - run:
@@ -83,7 +83,7 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudformation/cluster.yml \
               --tags project=${ENVIRONMENT_NAME}-project \
-              --stack-name "${ENVIRONMENT_NAME}-eks-cluster" \
+              --stack-name ${ENVIRONMENT_NAME}-eks-cluster \
               --region us-east-1 \
               --parameter-overrides file://cloudformation/cluster-parameters.json \
               --capabilities CAPABILITY_NAMED_IAM
@@ -94,7 +94,7 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudformation/nodegroup.yml \
               --tags project=${ENVIRONMENT_NAME}-project \
-              --stack-name "${ENVIRONMENT_NAME}-eks-nodegroup" \
+              --stack-name ${ENVIRONMENT_NAME}-eks-nodegroup \
               --region us-east-1 \
               --parameter-overrides file://cloudformation/nodegroup-parameters.json \
               --capabilities CAPABILITY_NAMED_IAM
@@ -104,7 +104,7 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudformation/management.yml \
               --tags project=${ENVIRONMENT_NAME}-project \
-              --stack-name "${ENVIRONMENT_NAME}-eks-management" \
+              --stack-name ${ENVIRONMENT_NAME}-eks-management \
               --region us-east-1 \
               --parameter-overrides file://cloudformation/management-parameters.json \
               --output text >> ~/checkIfDeployed.txt
