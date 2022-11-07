@@ -39,12 +39,12 @@ Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock:  !Ref VpcCIDR
+      CidrBlock:  192.168.0.0/16
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-VPC
+          Value: mycapstone-VPC
 
   InternetGateway:
     Type: "AWS::EC2::InternetGateway"
@@ -61,9 +61,9 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-Public-Subnets
+          Value: mycapstone-Public-Subnets
         - Key: Network
-          Value: !Sub ${EnvironmentName}-Public
+          Value: mycapstone-Public
 
   PublicRoute:
     DependsOn: VPCGatewayAttachment
@@ -84,7 +84,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-NatGatewayAZ1
+          Value: mycapstone-NatGatewayAZ1
 
   NatGateway2:
     DependsOn:
@@ -97,7 +97,7 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-NatGatewayAZ2
+          Value: mycapstone-NatGatewayAZ2
 
   NatGatewayEIP1:
     DependsOn:
@@ -130,7 +130,7 @@ Resources:
         Ref: VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-PublicSubnet1
+          Value: mycapstone-PublicSubnet1
         - Key: kubernetes.io/role/elb
           Value: 1
 
@@ -151,7 +151,7 @@ Resources:
         Ref: VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-PublicSubnet2
+          Value: mycapstone-PublicSubnet2
         - Key: kubernetes.io/role/elb
           Value: 1
 
@@ -183,34 +183,34 @@ Outputs:
     Description: EKS-VPC
     Value: !Ref VPC
     Export:
-      Name: !Sub ${EnvironmentName}-VPC
+      Name: mycapstone-VPC
 
   PublicRouteTable:
     Description: Public Routing Table
     Value: !Ref PublicRouteTable
     Export:
-      Name: !Sub ${EnvironmentName}-PUB-RT
+      Name: mycapstone-PUB-RT
 
   SubnetIds:
     Description: Subnets IDs in the VPC
     Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
     Export:
-      Name: !Sub ${EnvironmentName}-PUB-NETS
+      Name: mycapstone-PUB-NETS
 
   SecurityGroup:
     Description: Security group 
     Value: !Ref ControlPlaneSecurityGroup
     Export:
-      Name: !Sub ${EnvironmentName}-SCG
+      Name: mycapstone-SCG
 
   PublicSubnet1:
     Description: Public subnet in the 1st Availability Zone
     Value: !Ref PublicSubnet1
     Export:
-      Name: !Sub ${EnvironmentName}-PUB1-SN
+      Name: mycapstone-PUB1-SN
 
   PublicSubnet2:
     Description: Public subnet in the 2nd Availability Zone
     Value: !Ref PublicSubnet2
     Export:
-      Name: !Sub ${EnvironmentName}-PUB2-SN
+      Name: mycapstone-PUB2-SN

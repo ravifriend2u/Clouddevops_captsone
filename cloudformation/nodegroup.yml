@@ -4,7 +4,7 @@ Description: >
 Parameters:
   EnvironmentName:
     Description: An Environment name that will be prefixed to resources
-    Default: capstone
+    Default: mycapstone
     Type: String
 
   MinSize:
@@ -40,7 +40,7 @@ Resources:
   NodeInstanceRole:
     Type: "AWS::IAM::Role"
     Properties:
-      RoleName: !Sub ${EnvironmentName}-nodegroup-role
+      RoleName: mycapstone-nodegroup-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -60,9 +60,9 @@ Resources:
   NodeGroup:
     Type: AWS::EKS::Nodegroup
     Properties:
-      ClusterName: !Sub ${EnvironmentName}-cluster
+      ClusterName: mycapstone-cluster
       NodeRole: !GetAtt NodeInstanceRole.Arn
-      NodegroupName: !Sub ${EnvironmentName}-nodegroup
+      NodegroupName: mycapstone-nodegroup
       ScalingConfig:
         MinSize: !Ref MinSize
         MaxSize: !Ref MaxSize
@@ -78,9 +78,9 @@ Outputs:
     Description: The node instance role
     Value: !GetAtt NodeInstanceRole.Arn
     Export:
-      Name: !Sub ${EnvironmentName}-IR
+      Name: mycapstone-IR
   NodeGroup:
     Description: The node group for EKS
     Value: !Ref NodeGroup
     Export:
-      Name: !Sub ${EnvironmentName}-NG
+      Name: mycapstone-NG
