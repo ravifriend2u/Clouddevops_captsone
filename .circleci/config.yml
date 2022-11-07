@@ -73,8 +73,8 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/network.yml \
-              --tags project=${ENVIRONMENT_NAME}-project \
-              --stack-name "${ENVIRONMENT_NAME}-eks-network" \
+              --tags project=mycapstone-project \
+              --stack-name mycapstone-eks-network" \
               --region us-east-1 \
               --parameter-overrides file://cloudformation/network-parameters.json
       - run:
