@@ -11,7 +11,7 @@ jobs:
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
+            # fallback to using the latest cache if no exact match is found.
             - v1-dependencies-
 
       # run build
@@ -73,9 +73,9 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/network.yml \
-              --tags project=mycapstone-project \
-              --stack-name mycapstone-eks-network \
-              --region us-east-1 \
+              --tags project=${ENVIRONMENT_NAME}-project \
+              --stack-name "${ENVIRONMENT_NAME}-eks-network" \
+              --region ${AWS_DEFAULT_REGION} \
               --parameter-overrides file://cloudformation/network-parameters.json
       - run:
           name: Ensure EKS Cluster exists
