@@ -3,14 +3,14 @@ Description: >
 Parameters:
   EnvironmentName:
     Description: An Environment name that will be prefixed to resources
-    Default: mycapstone
+    Default: capstone
     Type: String
 
 Resources:
   ClusterInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: mycapstone-cluster-profile
+      InstanceProfileName: !Sub ${EnvironmentName}-cluster-profile
       Path: "/"
       Roles:
         - !Ref EKSClusterRole
@@ -18,7 +18,7 @@ Resources:
   EKSClusterRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: mycapstone-cluster-role
+      RoleName: !Sub ${EnvironmentName}-cluster-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -38,25 +38,25 @@ Resources:
     Type: AWS::EKS::Cluster
     Properties:
       Version: "1.19"
-      Name: mycapstone-cluster
+      Name: !Sub ${EnvironmentName}-cluster
       RoleArn: !GetAtt EKSClusterRole.Arn
       ResourcesVpcConfig:
         SecurityGroupIds:
-          - Fn::ImportValue: mycapstone-SCG
+          - Fn::ImportValue: !Sub ${EnvironmentName}-SCG
         SubnetIds:
           Fn::Split:
             - ","
             - Fn::ImportValue:
-                Fn::Sub: mycapstone-PUB-NETS
+                Fn::Sub: ${EnvironmentName}-PUB-NETS
 Outputs:
   EksId:
     Description: EKS id
     Value: !Ref CapstoneProjectCluster
     Export:
-      Name: mycapstone-EKSCluster
+      Name: !Sub ${EnvironmentName}-EKSCluster
 
   EKSRoleArn:
     Description: Role for accessing and creating aws resources
     Value: !GetAtt EKSClusterRole.Arn
     Export:
-      Name: mycapstone-EKSRole
+      Name: !Sub ${EnvironmentName}-EKSRole
