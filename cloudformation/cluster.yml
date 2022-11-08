@@ -13,7 +13,7 @@ Resources:
       InstanceProfileName: capstone-cluster-profile
       Path: "/"
       Roles:
-        - !Ref EKSClusterRole
+        - !Ref ClusterRole
 
   ClusterRole:
     Type: AWS::IAM::Role
