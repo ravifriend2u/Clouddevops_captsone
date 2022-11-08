@@ -184,17 +184,6 @@ jobs:
                 echo "Wait 60 seconds..."
                 sleep 60
               fi
-      # - run:
-      #     name: LoadBalancer's DNS name
-      #     command: |
-      #       cat ~/inventory.txt
-      #       cd ansible
-      #       ansible-playbook -i ~/inventory.txt save-elb-dns.yml
-      #       cat ~/elb_dns.txt
-      # - persist_to_workspace:
-      #     root: ~/
-      #     paths:
-      #       - elb_dns.txt
 
   deploy-docker:
     docker:
