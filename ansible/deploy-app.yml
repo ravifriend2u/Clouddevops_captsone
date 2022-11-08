@@ -8,11 +8,11 @@
     CIRCLE_WORKFLOW_ID: "{{ lookup('env', 'CIRCLE_WORKFLOW_ID') }}"
   tasks:
     - name: Update the deployment to run the latest Build
-      shell: "./bin/kubectl set image deployments/capstone-deployment capstone-app=dummylearner/capstone:{{ CIRCLE_WORKFLOW_ID }}"
+      shell: "./bin/kubectl set image deployments/capstone-deployment capstone-project-app=dummylearner/capstone:{{ CIRCLE_WORKFLOW_ID }}"
       args:
         chdir: $HOME
 
-    - name: Check if deployment ist successful
+    - name: Deployment is successful
       shell: "./bin/kubectl rollout status deployments/capstone-deployment"
       args:
         chdir: $HOME
