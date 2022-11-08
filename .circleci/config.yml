@@ -11,20 +11,18 @@ jobs:
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found.
+            # incase of issue
             - v1-dependencies-
 
-      # run build
       - run:
-          name: install dependencies
+          name: dependencies 
           command: |
             python3 -m venv venv
             . venv/bin/activate
             make install
 
-      # run lint
       - run:
-          name: run lint
+          name: Lint
           command: |
             . venv/bin/activate
             make lint
@@ -34,7 +32,7 @@ jobs:
             - ./venv
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
-  upload-docker:
+  docker-creation:
     docker:
       - image: circleci/golang:1.15
 
@@ -47,38 +45,37 @@ jobs:
           version: 19.03.13
 
       - run:
-          name: Build docker container
+          name: Docker build
           command: |
             docker build --tag=capstone .
             docker image ls
 
       - run:
-          name: Upload Docker to Dockerhub
+          name: Dockerhub Push
           command: |
             echo "Docker ID and Image: capstone"
             docker login -u="dummylearner" -p="Password@123"
             docker tag capstone dummylearner/capstone:$CIRCLE_WORKFLOW_ID
             docker push dummylearner/capstone:$CIRCLE_WORKFLOW_ID
 
-  deploy-infrastructure:
+  infra-deploy:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
       - run:
-          name: Install dependencies
+          name: Dependencies
           command: yum install -y tar gzip
       - run:
-          name: Ensure EKS network exists
+          name: Network Creation
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/network.yml \
-              --tags project=mycapstone-project \
-              --stack-name mycapstone-eks-network \
+              --tags project=capstone-project \
+              --stack-name capstone-network \
               --region us-east-1 \
-              --parameter-overrides file://cloudformation/network-parameters.json
       - run:
-          name: Ensure EKS Cluster exists
+          name: Cluster Creation
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/cluster.yml \
@@ -89,7 +86,7 @@ jobs:
               --capabilities CAPABILITY_NAMED_IAM
           no_output_timeout: 15m
       - run:
-          name: Ensure Nodegroup exists
+          name: Nodegroup Creation
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/nodegroup.yml \
@@ -99,7 +96,7 @@ jobs:
               --parameter-overrides file://cloudformation/nodegroup-parameters.json \
               --capabilities CAPABILITY_NAMED_IAM
       - run:
-          name: Ensure management instances exists
+          name: Environment Creation
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/management.yml \
@@ -110,7 +107,7 @@ jobs:
               --output text >> ~/checkIfDeployed.txt
             cat ~/checkIfDeployed.txt
       - run:
-          name: Extract the IPs of the management instances for Ansible
+          name: IP address
           command: |
             echo [management] > ~/inventory.txt
             aws ec2 describe-instances \
@@ -125,7 +122,7 @@ jobs:
             - inventory.txt
             - checkIfDeployed.txt
 
-  configure-infrastructure:
+  infra-setup:
     docker:
       - image: python:3.7-alpine3.11
     steps:
@@ -136,11 +133,11 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Install dependencies
+          name: Dependencies
           command: |
             apk add --update ansible
       - run:
-          name: Configure server
+          name: Server Setup
           command: |
             if grep -q "No changes to deploy" ~/checkIfDeployed.txt
               then
@@ -152,7 +149,7 @@ jobs:
                 ansible-playbook -i ~/inventory.txt configure-server.yml
               fi
 
-  configure-cluster:
+  cluster-setup:
     docker:
       - image: python:3.7-alpine3.11
     steps:
@@ -163,11 +160,11 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Install dependencies
+          name: Dependencies
           command: |
             apk add --update ansible
       - run:
-          name: Configure server
+          name: Cluster setup
           command: |
             if grep -q "No changes to deploy" ~/checkIfDeployed.txt
               then
@@ -179,19 +176,19 @@ jobs:
                 ansible-playbook -i ~/inventory.txt configure-cluster.yml
               fi
       - run:
-          name: Wait for LoadBalancer's domain to become reachable
+          name: LoadBalancer wait time
           command: |
             if grep -q "No changes to deploy" ~/checkIfDeployed.txt
               then
                 cat ~/inventory.txt
-                echo "Our management instances are already configured."
+                echo "setup is already done."
               else
                 cat ~/inventory.txt
                 echo "Wait 60 seconds..."
                 sleep 60
               fi
       - run:
-          name: Display the LoadBalancer's DNS name
+          name: LoadBalancer's DNS name
           command: |
             cat ~/inventory.txt
             cd ansible
@@ -213,11 +210,11 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
-          name: Install dependencies
+          name: Dependencies
           command: |
             apk add --update ansible
       - run:
-          name: Deploy newest Docker Image
+          name: New Docker Image
           command: |
             cat ~/inventory.txt
             cd ansible
@@ -228,23 +225,23 @@ workflows:
   default:
     jobs:
       - test-build
-      - upload-docker:
+      - docker-creation:
           requires:
             - test-build
           filters:
             branches:
               only: [ main ]
-      - deploy-infrastructure:
+      - infra-deploy:
           filters:
             branches:
               only: [ main ]
-      - configure-infrastructure:
+      - infra-setup:
           requires:
-            - deploy-infrastructure
-      - configure-cluster:
+            - infra-deploy
+      - cluster-setup:
           requires:
-            - configure-infrastructure
-            - upload-docker
+            - infra-setup
+            - docker-creation
       - deploy-docker:
           requires:
-            - configure-cluster
+            - cluster-setup
