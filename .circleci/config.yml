@@ -79,10 +79,9 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/cluster.yml \
-              --tags project=mycapstone-project \
-              --stack-name mycapstone-eks-cluster \
+              --tags project=capstone-project \
+              --stack-name capstone-cluster \
               --region us-east-1 \
-              --parameter-overrides file://cloudformation/cluster-parameters.json \
               --capabilities CAPABILITY_NAMED_IAM
           no_output_timeout: 15m
       - run:
@@ -90,20 +89,18 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/nodegroup.yml \
-              --tags project=mycapstone-project \
-              --stack-name mycapstone-eks-nodegroup \
+              --tags project=capstone-project \
+              --stack-name capstone-nodegroup \
               --region us-east-1 \
-              --parameter-overrides file://cloudformation/nodegroup-parameters.json \
               --capabilities CAPABILITY_NAMED_IAM
       - run:
           name: Environment Creation
           command: |
             aws cloudformation deploy \
               --template-file cloudformation/management.yml \
-              --tags project=mycapstone-project \
-              --stack-name mycapstone-eks-management \
+              --tags project=capstone-project \
+              --stack-name capstone-management \
               --region us-east-1 \
-              --parameter-overrides file://cloudformation/management-parameters.json \
               --output text >> ~/checkIfDeployed.txt
             cat ~/checkIfDeployed.txt
       - run:
@@ -113,7 +110,7 @@ jobs:
             aws ec2 describe-instances \
               --region "us-east-1" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:Name,Values=mycapstone-management*" \
+              --filters "Name=tag:Name,Values=capstone-management*" \
               --output text >> ~/inventory.txt
             cat ~/inventory.txt
       - persist_to_workspace:

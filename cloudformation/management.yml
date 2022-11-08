@@ -1,6 +1,6 @@
 Description: >
   Capstone Project
-  Creates two individual hosts to manage the EKS-Cluster
+  Creates two EC2 instance
 
 Parameters:
   EnvironmentName:
@@ -20,7 +20,7 @@ Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${EnvironmentName}-management-SG
+      GroupName: capstone-management-SG
       GroupDescription: Allow port 22 for management
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -28,30 +28,30 @@ Resources:
           ToPort: 22
           CidrIp: 0.0.0.0/0
 
-  managementHost1:
+  EC2Instance1:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
       SecurityGroups:
         - Ref: InstanceSecurityGroup
-      KeyName: !Ref SSHKeyName
-      ImageId: !Ref amiImageId
+      KeyName: capstone
+      ImageId: ami-0149b2da6ceec4bb0
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-management1
+          Value: capstone-EC2Instance1
         - Key: Project
-          Value: !Ref EnvironmentName
+          Value: capstone
 
-  managementHost2:
+  EC2Instance2:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
       SecurityGroups:
         - Ref: InstanceSecurityGroup
-      KeyName: !Ref SSHKeyName
-      ImageId: !Ref amiImageId
+      KeyName: capstone
+      ImageId: ami-0149b2da6ceec4bb0
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-management2
+          Value: capstone-EC2Instance2
         - Key: Project
-          Value: !Ref EnvironmentName
+          Value: capstone

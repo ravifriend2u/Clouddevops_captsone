@@ -40,7 +40,7 @@ Resources:
   NodeInstanceRole:
     Type: "AWS::IAM::Role"
     Properties:
-      RoleName: !Sub ${EnvironmentName}-nodegroup-role
+      RoleName: capstone-nodegroup-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -60,27 +60,27 @@ Resources:
   NodeGroup:
     Type: AWS::EKS::Nodegroup
     Properties:
-      ClusterName: !Sub ${EnvironmentName}-cluster
+      ClusterName: capstone-cluster
       NodeRole: !GetAtt NodeInstanceRole.Arn
-      NodegroupName: !Sub ${EnvironmentName}-nodegroup
+      NodegroupName: capstone-nodegroup
       ScalingConfig:
-        MinSize: !Ref MinSize
-        MaxSize: !Ref MaxSize
-        DesiredSize: !Ref DesiredSize
+        MinSize: 2
+        MaxSize: 6
+        DesiredSize: 4
       Subnets:
         Fn::Split:
           - ","
           - Fn::ImportValue:
-              Fn::Sub: ${EnvironmentName}-PUB-NETS
+              Fn::Sub: capstone-PUB-NETS
 
 Outputs:
   NodeInstanceRole:
     Description: The node instance role
     Value: !GetAtt NodeInstanceRole.Arn
     Export:
-      Name: !Sub ${EnvironmentName}-IR
+      Name: capstone-IR
   NodeGroup:
     Description: The node group for EKS
     Value: !Ref NodeGroup
     Export:
-      Name: !Sub ${EnvironmentName}-NG
+      Name: capstone-NG
