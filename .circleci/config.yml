@@ -110,7 +110,7 @@ jobs:
             aws ec2 describe-instances \
               --region "us-east-1" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:Name,Values=capstone-management*" \
+              --filters "Name=tag:Name,Values=capstone-EC2Instance*" \
               --output text >> ~/inventory.txt
             cat ~/inventory.txt
       - persist_to_workspace:
@@ -184,17 +184,17 @@ jobs:
                 echo "Wait 60 seconds..."
                 sleep 60
               fi
-      - run:
-          name: LoadBalancer's DNS name
-          command: |
-            cat ~/inventory.txt
-            cd ansible
-            ansible-playbook -i ~/inventory.txt save-elb-dns.yml
-            cat ~/elb_dns.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - elb_dns.txt
+      # - run:
+      #     name: LoadBalancer's DNS name
+      #     command: |
+      #       cat ~/inventory.txt
+      #       cd ansible
+      #       ansible-playbook -i ~/inventory.txt save-elb-dns.yml
+      #       cat ~/elb_dns.txt
+      # - persist_to_workspace:
+      #     root: ~/
+      #     paths:
+      #       - elb_dns.txt
 
   deploy-docker:
     docker:
