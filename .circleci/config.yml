@@ -87,7 +87,7 @@ jobs:
       - run:
           name: EKS Cluster creation 
           command: |
-            eksctl create cluster --name capstoneeks --version 1.19 --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c --nodegroup-name capstonenodegrp --node-type t2.micro --nodes-min 2 --nodes-max 4 --managed
+            eksctl create cluster --name capstoneeks --version 1.23 --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c --nodegroup-name capstonenodegrp --node-type t2.micro --nodes-min 2 --nodes-max 4 --managed
 
   clusterdeploy:
     docker:
