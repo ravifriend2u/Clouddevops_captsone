@@ -58,154 +58,226 @@ jobs:
             docker tag capstone dummylearner/capstone:$CIRCLE_WORKFLOW_ID
             docker push dummylearner/capstone:$CIRCLE_WORKFLOW_ID
 
-  infra-deploy:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Dependencies
-          command: yum install -y tar gzip
-      - run:
-          name: Network Creation
-          command: |
-            aws cloudformation deploy \
-              --template-file cloudformation/network.yml \
-              --tags project=capstone-project \
-              --stack-name capstone-network \
-              --region us-east-1 \
-      - run:
-          name: Cluster Creation
-          command: |
-            aws cloudformation deploy \
-              --template-file cloudformation/cluster.yml \
-              --tags project=capstone-project \
-              --stack-name capstone-cluster \
-              --region us-east-1 \
-              --capabilities CAPABILITY_NAMED_IAM
-          no_output_timeout: 15m
-      - run:
-          name: Nodegroup Creation
-          command: |
-            aws cloudformation deploy \
-              --template-file cloudformation/nodegroup.yml \
-              --tags project=capstone-project \
-              --stack-name capstone-nodegroup \
-              --region us-east-1 \
-              --capabilities CAPABILITY_NAMED_IAM
-      - run:
-          name: Environment Creation
-          command: |
-            aws cloudformation deploy \
-              --template-file cloudformation/management.yml \
-              --tags project=capstone-project \
-              --stack-name capstone-management \
-              --region us-east-1 \
-              --output text >> ~/checkIfDeployed.txt
-            cat ~/checkIfDeployed.txt
-      - run:
-          name: IP address
-          command: |
-            echo [management] > ~/inventory.txt
-            aws ec2 describe-instances \
-              --region "us-east-1" \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:Name,Values=capstone-EC2Instance*" \
-              --output text >> ~/inventory.txt
-            cat ~/inventory.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - inventory.txt
-            - checkIfDeployed.txt
+    clustercreate:
+      docker:
+        - image: python:3.7.3-stretch
+      steps:
+        - checkout
+        - run:
+            name: AWSCLI 
+            command: |
+              pip3 install awscli
+        - run:
+            name: IAM Authenticator
+            command: |
+              curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+              chmod +x ./aws-iam-authenticator
+              mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+        - run:
+            name: Download kubectl  
+            command: |
+              curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+              chmod +x ./kubectl
+              mv ./kubectl /usr/local/bin/kubectl
+        - run:
+            name: Download eksctl 
+            command: |
+              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+              sudo mv /tmp/eksctl /usr/local/bin
+        - run:
+            name: EKS Cluster creation 
+            command: |
+              eksctl create cluster --name capstoneeks --version 1.19 --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c --nodegroup-name capstonenodegrp --node-type t2.micro --nodes-min 2 --nodes-max 4 --managed
 
-  infra-setup:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Dependencies
-          command: |
-            apk add --update ansible
-      - run:
-          name: Server Setup
-          command: |
-            if grep -q "No changes to deploy" ~/checkIfDeployed.txt
-              then
-                cat ~/inventory.txt
-                echo "Our management instances are already configured."
-              else
-                cat ~/inventory.txt
-                cd ansible
-                ansible-playbook -i ~/inventory.txt configure-server.yml
-              fi
+    clusterdeploy:
+      docker:
+        - image: python:3.7.3-stretch
+      steps:
+        - checkout
+        - run:
+            name: AWSCLI 
+            command: |
+              pip3 install awscli
+        - run:
+            name: IAM Authenticator
+            command: |
+              curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+              chmod +x ./aws-iam-authenticator
+              mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+        - run:
+            name: Download kubectl  
+            command: |
+              curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+              chmod +x ./kubectl
+              mv ./kubectl /usr/local/bin/kubectl
+        - run:
+            name: Download eksctl 
+            command: |
+              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+              sudo mv /tmp/eksctl /usr/local/bin
+        - run:
+            name: eks cluster deploy
+            command: |
+              aws eks update-kubeconfig --region us-east-1 --name capstoneeks
+              kubectl apply -f deploy.yml
+              kubectl get nodes
+              kubectl get deployment
+              kubectl get pod -o wide 
+              kubectl apply -f services.yml
+              kubectl get services
+              kubectl rollout status deployment/capstone
+              kubectl describe svc capstone
 
-  cluster-setup:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Dependencies
-          command: |
-            apk add --update ansible
-      - run:
-          name: Cluster setup
-          command: |
-            if grep -q "No changes to deploy" ~/checkIfDeployed.txt
-              then
-                cat ~/inventory.txt
-                echo "Our management instances are already configured."
-              else
-                cat ~/inventory.txt
-                cd ansible
-                ansible-playbook -i ~/inventory.txt configure-cluster.yml
-              fi
-      - run:
-          name: LoadBalancer wait time
-          command: |
-            if grep -q "No changes to deploy" ~/checkIfDeployed.txt
-              then
-                cat ~/inventory.txt
-                echo "setup is already done."
-              else
-                cat ~/inventory.txt
-                echo "Wait 60 seconds..."
-                sleep 60
-              fi
+           
 
-  deploy-docker:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Dependencies
-          command: |
-            apk add --update ansible
-      - run:
-          name: New Docker Image
-          command: |
-            cat ~/inventory.txt
-            cd ansible
-            ansible-playbook -i ~/inventory.txt deploy-app.yml
-          no_output_timeout: 2m
+  # infra-deploy:
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Dependencies
+  #         command: yum install -y tar gzip
+  #     - run:
+  #         name: Network Creation
+  #         command: |
+  #           aws cloudformation deploy \
+  #             --template-file cloudformation/network.yml \
+  #             --tags project=capstone-project \
+  #             --stack-name capstone-network \
+  #             --region us-east-1 \
+  #     - run:
+  #         name: Cluster Creation
+  #         command: |
+  #           aws cloudformation deploy \
+  #             --template-file cloudformation/cluster.yml \
+  #             --tags project=capstone-project \
+  #             --stack-name capstone-cluster \
+  #             --region us-east-1 \
+  #             --capabilities CAPABILITY_NAMED_IAM
+  #         no_output_timeout: 15m
+  #     - run:
+  #         name: Nodegroup Creation
+  #         command: |
+  #           aws cloudformation deploy \
+  #             --template-file cloudformation/nodegroup.yml \
+  #             --tags project=capstone-project \
+  #             --stack-name capstone-nodegroup \
+  #             --region us-east-1 \
+  #             --capabilities CAPABILITY_NAMED_IAM
+  #     - run:
+  #         name: Environment Creation
+  #         command: |
+  #           aws cloudformation deploy \
+  #             --template-file cloudformation/management.yml \
+  #             --tags project=capstone-project \
+  #             --stack-name capstone-management \
+  #             --region us-east-1 \
+  #             --output text >> ~/checkIfDeployed.txt
+  #           cat ~/checkIfDeployed.txt
+  #     - run:
+  #         name: IP address
+  #         command: |
+  #           echo [management] > ~/inventory.txt
+  #           aws ec2 describe-instances \
+  #             --region "us-east-1" \
+  #             --query 'Reservations[*].Instances[*].PublicIpAddress' \
+  #             --filters "Name=tag:Name,Values=capstone-EC2Instance*" \
+  #             --output text >> ~/inventory.txt
+  #           cat ~/inventory.txt
+  #     - persist_to_workspace:
+  #         root: ~/
+  #         paths:
+  #           - inventory.txt
+  #           - checkIfDeployed.txt
+
+  # infra-setup:
+  #   docker:
+  #     - image: python:3.7-alpine3.11
+  #   steps:
+  #     - checkout
+  #     - add_ssh_keys:
+  #         fingerprints:
+  #           - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
+  #     - attach_workspace:
+  #         at: ~/
+  #     - run:
+  #         name: Dependencies
+  #         command: |
+  #           apk add --update ansible
+  #     - run:
+  #         name: Server Setup
+  #         command: |
+  #           if grep -q "No changes to deploy" ~/checkIfDeployed.txt
+  #             then
+  #               cat ~/inventory.txt
+  #               echo "Our management instances are already configured."
+  #             else
+  #               cat ~/inventory.txt
+  #               cd ansible
+  #               ansible-playbook -i ~/inventory.txt configure-server.yml
+  #             fi
+
+  # cluster-setup:
+  #   docker:
+  #     - image: python:3.7-alpine3.11
+  #   steps:
+  #     - checkout
+  #     - add_ssh_keys:
+  #         fingerprints:
+  #           - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
+  #     - attach_workspace:
+  #         at: ~/
+  #     - run:
+  #         name: Dependencies
+  #         command: |
+  #           apk add --update ansible
+  #     - run:
+  #         name: Cluster setup
+  #         command: |
+  #           if grep -q "No changes to deploy" ~/checkIfDeployed.txt
+  #             then
+  #               cat ~/inventory.txt
+  #               echo "Our management instances are already configured."
+  #             else
+  #               cat ~/inventory.txt
+  #               cd ansible
+  #               ansible-playbook -i ~/inventory.txt configure-cluster.yml
+  #             fi
+  #     - run:
+  #         name: LoadBalancer wait time
+  #         command: |
+  #           if grep -q "No changes to deploy" ~/checkIfDeployed.txt
+  #             then
+  #               cat ~/inventory.txt
+  #               echo "setup is already done."
+  #             else
+  #               cat ~/inventory.txt
+  #               echo "Wait 60 seconds..."
+  #               sleep 60
+  #             fi
+
+  # deploy-docker:
+  #   docker:
+  #     - image: python:3.7-alpine3.11
+  #   steps:
+  #     - checkout
+  #     - add_ssh_keys:
+  #         fingerprints:
+  #           - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
+  #     - attach_workspace:
+  #         at: ~/
+  #     - run:
+  #         name: Dependencies
+  #         command: |
+  #           apk add --update ansible
+  #     - run:
+  #         name: New Docker Image
+  #         command: |
+  #           cat ~/inventory.txt
+  #           cd ansible
+  #           ansible-playbook -i ~/inventory.txt deploy-app.yml
+  #         no_output_timeout: 2m
 
 workflows:
   default:
@@ -217,17 +289,23 @@ workflows:
           filters:
             branches:
               only: [ main ]
-      - infra-deploy:
-          filters:
-            branches:
-              only: [ main ]
-      - infra-setup:
+      - clustercreate:
           requires:
-            - infra-deploy
-      - cluster-setup:
-          requires:
-            - infra-setup
             - docker-creation
-      - deploy-docker:
+      - clusterdeploy:
           requires:
-            - cluster-setup
+            - clustercreate
+      # - infra-deploy:
+      #     filters:
+      #       branches:
+      #         only: [ main ]
+      # - infra-setup:
+      #     requires:
+      #       - infra-deploy
+      # - cluster-setup:
+      #     requires:
+      #       - infra-setup
+      #       - docker-creation
+      # - deploy-docker:
+      #     requires:
+      #       - cluster-setup
