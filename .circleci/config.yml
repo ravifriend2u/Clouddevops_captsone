@@ -122,7 +122,9 @@ jobs:
             kubectl apply -f deploy.yml
             kubectl get nodes
             kubectl get deployment
-            kubectl get pod -o wide 
+            kubectl get pods --all-namespaces
+            kubectl get pod -o wide
+            kubectl get pods    
             kubectl apply -f service.yml
             kubectl get services
             kubectl rollout status deployment/capstone
