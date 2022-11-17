@@ -55,8 +55,8 @@ jobs:
           command: |
             echo "Docker ID and Image: capstone"
             docker login -u="dummylearner" -p="Password@123"
-            docker tag capstone dummylearner/capstone:$CIRCLE_WORKFLOW_ID
-            docker push dummylearner/capstone:$CIRCLE_WORKFLOW_ID
+            docker tag capstone dummylearner/capstone:V1
+            docker push dummylearner/capstone:V1
 
   clustercreate:
     docker:
@@ -129,6 +129,7 @@ jobs:
             kubectl get services
             kubectl rollout status deployment/capstone
             kubectl describe svc capstone
+          no_output_timeout: 30m
 
            
 
