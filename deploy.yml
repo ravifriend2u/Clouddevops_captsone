@@ -22,8 +22,8 @@ spec:
         app: capstone
     spec:
       containers:
-        - name: capstone
-          image: dummylearner/capstone:V1
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 6000
+      - name: capstone
+        image: dummylearner/capstone:V1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 6000

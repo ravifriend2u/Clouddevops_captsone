@@ -89,7 +89,7 @@ jobs:
           command: |
             aws cloudformation list-exports > cluster.txt
             cat cluster.txt
-            if [ $(grep -i "capstoneeks" cluster.txt | wc-l) -ge 1 ]
+            if [ $(grep -i "capstoneeks" cluster.txt | wc - 1) -ge 1 ]
               then
               echo "already EKS Cluster exists in environment"
               else
