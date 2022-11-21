@@ -6,7 +6,7 @@ COPY . app.py /app/
 
 # hadolint ignore=DL3013
 RUN pip install --upgrade --no-cache-dir pip &&\
-    pip install --trusted-host --no-cache-dir pypi.python.org -r requirements.txt
+    pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.txt
 
 EXPOSE 6000
 
