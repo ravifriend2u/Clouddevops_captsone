@@ -26,4 +26,4 @@ spec:
           image: dummylearner/capstone:V1
           imagePullPolicy: Always
           ports:
-            - containerPort: 80
+            - containerPort: 6000
