@@ -94,7 +94,7 @@ jobs:
               echo "already EKS Cluster exists in environment"
               else
               echo "creating the EKS cluster"
-              eksctl create cluster --name capstoneeks --version 1.23 --region us-west-1 --zones us-west-1a,us-west-1b --nodegroup-name capstonenodegrp --node-type t2.micro --nodes-min 2 --nodes-max 4 --managed
+              eksctl create cluster --name capstoneeks --version 1.23 --region us-west-2 --zones us-west-2a,us-west-2b --nodegroup-name capstonenodegrp --node-type t2.small --nodes-min 2 --nodes-max 4 --managed
             fi
 
   clusterdeploy:
@@ -126,13 +126,14 @@ jobs:
       - run:
           name: eks cluster deploy
           command: |
-            aws eks update-kubeconfig --region us-west-1 --name capstoneeks
+            aws eks update-kubeconfig --region us-west-2 --name capstoneeks
             kubectl apply -f deploy.yml
+            kubectl get svc
             kubectl get nodes
+            kubectl get pods    
             kubectl get deployment
             kubectl get pods --all-namespaces
             kubectl get pod -o wide
-            kubectl get pods    
             kubectl apply -f service.yml
             kubectl get services
             kubectl rollout status deployment/capstone
