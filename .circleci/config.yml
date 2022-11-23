@@ -54,7 +54,7 @@ jobs:
           name: Dockerhub Push
           command: |
             echo "Docker ID and Image: capstone"
-            docker login -u="dummylearner" -p="Password@123"
+            docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             docker tag capstone dummylearner/capstone:V1
             docker push dummylearner/capstone:V1
 
@@ -132,6 +132,7 @@ jobs:
             kubectl get nodes
             kubectl get pods    
             kubectl get deployment
+            kubectl get deployments -o wide
             kubectl get pods --all-namespaces
             kubectl get pod -o wide
             kubectl apply -f service.yml
