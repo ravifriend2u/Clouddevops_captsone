@@ -13,8 +13,6 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
     type: RollingUpdate
-      # maxSurge: 1
-  # progressDeadlineSeconds: 600
 
   template:
     metadata:
