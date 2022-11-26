@@ -54,8 +54,8 @@ jobs:
           command: |
             echo "Docker ID and Image: capstone"
             docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
-            docker tag capstone dummylearner/capstone:udacap
-            docker push dummylearner/capstone:udacap
+            docker tag capstone dummylearner/capstone:udacap2
+            docker push dummylearner/capstone:udacap2
 
   clustercreate:
     docker:

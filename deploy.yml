@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: capstone
-        image: dummylearner/capstone:udacap
+        image: dummylearner/capstone:udacap2
         imagePullPolicy: Always
         ports:
         - containerPort: 80
