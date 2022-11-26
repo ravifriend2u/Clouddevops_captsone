@@ -126,7 +126,7 @@ jobs:
       - run:
           name: eks cluster deploy
           command: |
-            aws eks --region update-kubeconfig us-west-2 --name capstoneeks
+            aws eks update-kubeconfig --region us-west-2 --name capstoneeks
             kubectl apply -f deploy.yml
             kubectl get svc
             kubectl get nodes
