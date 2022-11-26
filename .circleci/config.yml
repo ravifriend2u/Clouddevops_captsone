@@ -55,8 +55,8 @@ jobs:
           command: |
             echo "Docker ID and Image: capstone"
             docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
-            docker tag capstone dummylearner/capstone:V1
-            docker push dummylearner/capstone:V1
+            docker tag capstone dummylearner/capstone:udacap
+            docker push dummylearner/capstone:udacap
 
   clustercreate:
     docker:
@@ -126,7 +126,7 @@ jobs:
       - run:
           name: eks cluster deploy
           command: |
-            aws eks update-kubeconfig --region us-west-2 --name capstoneeks
+            aws eks --region update-kubeconfig us-west-2 --name capstoneeks
             kubectl apply -f deploy.yml
             kubectl get svc
             kubectl get nodes
@@ -139,158 +139,8 @@ jobs:
             kubectl get services
             kubectl rollout status deployment/capstone
             kubectl describe svc capstone
-          no_output_timeout: 30m
+          # no_output_timeout: 30m
 
-           
-
-  # infra-deploy:
-  #   docker:
-  #     - image: amazon/aws-cli
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Dependencies
-  #         command: yum install -y tar gzip
-  #     - run:
-  #         name: Network Creation
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file cloudformation/network.yml \
-  #             --tags project=capstone-project \
-  #             --stack-name capstone-network \
-  #             --region us-east-1 \
-  #     - run:
-  #         name: Cluster Creation
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file cloudformation/cluster.yml \
-  #             --tags project=capstone-project \
-  #             --stack-name capstone-cluster \
-  #             --region us-east-1 \
-  #             --capabilities CAPABILITY_NAMED_IAM
-  #         no_output_timeout: 15m
-  #     - run:
-  #         name: Nodegroup Creation
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file cloudformation/nodegroup.yml \
-  #             --tags project=capstone-project \
-  #             --stack-name capstone-nodegroup \
-  #             --region us-east-1 \
-  #             --capabilities CAPABILITY_NAMED_IAM
-  #     - run:
-  #         name: Environment Creation
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file cloudformation/management.yml \
-  #             --tags project=capstone-project \
-  #             --stack-name capstone-management \
-  #             --region us-east-1 \
-  #             --output text >> ~/checkIfDeployed.txt
-  #           cat ~/checkIfDeployed.txt
-  #     - run:
-  #         name: IP address
-  #         command: |
-  #           echo [management] > ~/inventory.txt
-  #           aws ec2 describe-instances \
-  #             --region "us-east-1" \
-  #             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-  #             --filters "Name=tag:Name,Values=capstone-EC2Instance*" \
-  #             --output text >> ~/inventory.txt
-  #           cat ~/inventory.txt
-  #     - persist_to_workspace:
-  #         root: ~/
-  #         paths:
-  #           - inventory.txt
-  #           - checkIfDeployed.txt
-
-  # infra-setup:
-  #   docker:
-  #     - image: python:3.7-alpine3.11
-  #   steps:
-  #     - checkout
-  #     - add_ssh_keys:
-  #         fingerprints:
-  #           - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
-  #     - attach_workspace:
-  #         at: ~/
-  #     - run:
-  #         name: Dependencies
-  #         command: |
-  #           apk add --update ansible
-  #     - run:
-  #         name: Server Setup
-  #         command: |
-  #           if grep -q "No changes to deploy" ~/checkIfDeployed.txt
-  #             then
-  #               cat ~/inventory.txt
-  #               echo "Our management instances are already configured."
-  #             else
-  #               cat ~/inventory.txt
-  #               cd ansible
-  #               ansible-playbook -i ~/inventory.txt configure-server.yml
-  #             fi
-
-  # cluster-setup:
-  #   docker:
-  #     - image: python:3.7-alpine3.11
-  #   steps:
-  #     - checkout
-  #     - add_ssh_keys:
-  #         fingerprints:
-  #           - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
-  #     - attach_workspace:
-  #         at: ~/
-  #     - run:
-  #         name: Dependencies
-  #         command: |
-  #           apk add --update ansible
-  #     - run:
-  #         name: Cluster setup
-  #         command: |
-  #           if grep -q "No changes to deploy" ~/checkIfDeployed.txt
-  #             then
-  #               cat ~/inventory.txt
-  #               echo "Our management instances are already configured."
-  #             else
-  #               cat ~/inventory.txt
-  #               cd ansible
-  #               ansible-playbook -i ~/inventory.txt configure-cluster.yml
-  #             fi
-  #     - run:
-  #         name: LoadBalancer wait time
-  #         command: |
-  #           if grep -q "No changes to deploy" ~/checkIfDeployed.txt
-  #             then
-  #               cat ~/inventory.txt
-  #               echo "setup is already done."
-  #             else
-  #               cat ~/inventory.txt
-  #               echo "Wait 60 seconds..."
-  #               sleep 60
-  #             fi
-
-  # deploy-docker:
-  #   docker:
-  #     - image: python:3.7-alpine3.11
-  #   steps:
-  #     - checkout
-  #     - add_ssh_keys:
-  #         fingerprints:
-  #           - "86:c4:db:d0:fc:30:eb:1d:c5:0c:52:50:8e:97:9c:32"
-  #     - attach_workspace:
-  #         at: ~/
-  #     - run:
-  #         name: Dependencies
-  #         command: |
-  #           apk add --update ansible
-  #     - run:
-  #         name: New Docker Image
-  #         command: |
-  #           cat ~/inventory.txt
-  #           cd ansible
-  #           ansible-playbook -i ~/inventory.txt deploy-app.yml
-  #         no_output_timeout: 2m
 
 workflows:
   default:
